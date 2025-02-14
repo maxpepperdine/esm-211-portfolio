@@ -1,0 +1,153 @@
+---
+title: "popbio_demo_short"
+format: html
+editor: visual
+---
+
+# 1. Load packages
+
+```{r}
+library(tidyverse)
+library(popbio)
+```
+
+# 2. Load census data
+
+Use pre-loaded test.census data, which reports 3 years of census observations for a hypothetical plant.
+
+```{r}
+data <- test.census
+```
+
+# 3. Construct Projection Matrix
+
+## A. Create a stage-fate dataframe.
+
+A stage-fate dataframe links each observation of an individual during one census (time 1) with its fate in the following census (time 2).
+
+```{r}
+# create the stage-fate dataframe
+trans <- subset(
+  merge(data, data, by = "plant", sort = FALSE),
+  year.x == year.y - 1)
+
+# rename rows to improve clarity
+rownames(trans) <- 1:nrow(trans)
+
+# rename columns 2-7 to improve clarity
+colnames(trans)[2:7] <- c("year", "stage", "fruits", "year2", "fate", "fruits2")
+```
+
+## B. Calculate and add fertility rate to the stage-fate data frame.
+
+Calculating fertility rates will allow us to determine the reproductive success of each individual. It is also necessary to produce the projection matrix when individual fertility rates are averaged by stage. When census data lacks information on the direct number of offspring (ie. seeds produced by plants), a relative fertility rate could be used instead. The relative fertility is calculcated by finding the proportion of total reproductive output attributable to an individual times the total number of seedlings at the end of the projection interval.
+
+```{r}
+#########################
+##### FOR YEAR 2001 #####
+#########################
+
+# subset the data from 2001
+trans01 <- subset(trans, year == 2001, c(plant, stage, fruits, fate))
+
+# count the number of seedlings observed in the next year (2002)
+seedlings02 <- nrow(subset(trans, year == 2002 & stage == "seedling")) 
+
+# calculate the relative fertility rate of each plant and store it in a new "seedling" column
+trans01$seedling <- trans01$fruits/sum(trans01$fruits) * seedlings02
+
+```
+
+```{r}
+#########################
+##### FOR YEAR 2002 #####
+#########################
+
+# subset the data from 2002
+trans02 <- subset(trans, year == 2002, c(plant, stage, fruits, fate))
+
+# count the number of seedlings observed in the next year (2003)
+seedlings03 <- nrow(subset(trans, year == 2003 & stage == "seedling"))
+
+# calculate the relative fertility rate of each plant and store it in a new "seedling" column
+trans02$seedling <- trans02$fruits/sum(trans02$fruits) * seedlings03
+```
+
+## C. Create the projection matrix
+
+```{r}
+#########################
+##### FOR YEAR 2001 #####
+#########################
+
+# assign life stages of interest to "stages"
+stages <- c("seedling", "vegetative", "reproductive")
+
+# create population projection matrix using 2001 relative fertility rate
+A01 <- projection.matrix(trans01, sort = stages)
+```
+
+```{r}
+#########################
+##### FOR YEAR 2002 #####
+#########################
+
+# assign life stages of interest to "stages"
+stages <- c("seedling", "vegetative", "reproductive")
+
+# create population projection matrix using 2002 relative fertility rate
+A02 <- projection.matrix(trans02, sort = stages)
+```
+
+# 4. Calculate Deterministic Population Growth Rate
+
+The deterministic approach to population modeling relies on the equation Nt+1. It assumes density-independent population growth, constant vital rates, constant environment.
+
+```{r}
+#####################################
+##### USING 2001 FERTILITY RATE #####
+#####################################
+
+# define starting population size AKA initial stage vector. the initial stage vector is th distribution of individuals across different stages at the beginning of the projection period.
+
+# count the number of seedlings, vegetative, and reproductive individuals observed in 2001
+n2001 <- data.frame(
+  seedling = nrow(subset(trans, year == 2001 & stage == "seedling")),
+  vegetative = nrow(subset(trans, year == 2001 & stage == "vegetative")),
+  reproductive = nrow(subset(trans, year == 2001 & stage == "reproductive"))
+)
+
+# assign the starting population size. 6 seedlings, 2 vegetative, 3 reproductive
+n01 <- c(6,2,3)
+
+# project population growth over 15 years
+p01 <- pop.projection(A01, n01, 15)
+
+```
+
+```{r}
+#####################################
+##### USING 2002 FERTILITY RATE #####
+#####################################
+
+# assign the starting population size. 6 seedlings, 2 vegetative, 3 reproductive
+n02 <- c(6,2,3)
+
+# project population growth over 15 years
+p02 <- pop.projection(A02, n02, 15)
+
+# use the lambda function to calculate the deterministic growth rate
+growth_rate_2002 <- lambda(A02)
+```
+
+# 5. Calculate Stochastic Growth Rate
+
+```{r}
+# compile all projection matrices into one list
+matrices <- list(A01, A02)
+names(matrices) <- c("AO1", "AO2")
+
+# find stochastic growth rate for 50,000 iterations
+sgr <- stoch.growth.rate(matrices, verbose = FALSE)
+exp(sgr$approx)
+```

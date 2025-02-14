@@ -1,0 +1,67 @@
+---
+title: "`popbio` portfolio assignment"
+format: html
+editor: visual
+---
+
+## Load packages
+
+```{r}
+library(tidyverse)
+library(popbio)
+```
+
+## Load the prepared hudsonia data
+
+```{r}
+hudsonia <- hudsonia
+```
+
+## Determine the population growth rate for each year of available data (1985-1988) using the deterministic approach
+
+```{r}
+# extract the data for each year
+A85 <- hudsonia[["A85"]]
+A86 <- hudsonia[["A86"]]
+A87 <- hudsonia[["A87"]]
+A88 <- hudsonia[["A88"]]
+
+# determine the population growth rate for each year
+gr85 <- lambda(A85) # 0.9593
+gr86 <- lambda(A86) # 1.0098
+gr87 <- lambda(A87) # 0.8453
+gr88 <- lambda(A88) # 1.0183
+```
+
+The population growth rates for the years 1985 to 1988 are as follows:
+
+- **1985**: 0.9593
+- **1986**: 1.0098
+- **1987**: 0.8453
+- **1988**: 1.0183
+
+## Determine the stochastic growth rate
+
+```{r}
+# compile all projection matrices into one list
+matrices <- list(A85, A86, A87, A88)
+names(matrices) <- c("A85", "A86", "A87", "A88")
+
+# find stochastic growth rate for 50,000 iterations
+sgr_hudsonia <- stoch.growth.rate(matrices, verbose = FALSE)
+sgr_hudsonia_exp <- exp(sgr_hudsonia$approx) # 0.9636
+```
+
+The stochastic growth rate for the years 1985 to 1988 is approximately **0.9636**.
+
+## Question: Compare the growth rates calculated using the two methods. How are they different? Why?
+
+
+
+
+
+
+
+
+
+
