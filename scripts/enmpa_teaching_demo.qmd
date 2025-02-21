@@ -18,6 +18,10 @@ editor_options:
   chunk_output_type: console
 ---
 
+```{r}
+rm(list = ls())
+```
+
 # library
 
 Use the library enmpa for the tools; Use terra for the mapping
@@ -29,7 +33,6 @@ library(tidyverse) #keeps things clean
 library(here) #makes saving and uploading data sets easier
 library(geodata) #has the bioclim data
 library(predicts) #helps make spatial predictive modeling
-
 ```
 
 # Cleaning the Data and Linking it to the Bioclim Data
@@ -253,7 +256,7 @@ Model number 7 was the only one fit well/met the criteria for accuracy and compl
 
 After one or more models are selected, the next steps are the fitting and projection of these models. In this case we are projecting the models to the whole area of interest. Models can be transferred with three options: Free Extrapolation (‘E’) Extrapolation with clamping (‘EC’) No Extrapolation (‘NE’).
 
-**E** - Model can extrapolate trends to any environmental conditions (temps or precip), even if it was not observed in training data. 
+**E** - Model can extrapolate trends to any environmental conditions (temps or precip), even if it was not observed in training data.
 
 **EC** - "Clamps" environmental values to input env data range to avoid extreme predictions, but can make predictions outside of input data's geographic range NE - Prevents predictions outside of training data's env data and geographic ranges
 
@@ -300,11 +303,28 @@ Run the demo but with the monarch data set.
 
 ```{r}
 # load and clean the monarch data 
-obs_data_mn <- read_csv(here("data","Monarch.csv")) |>
-  select(gbifID, decimalLatitude, decimalLongitude) |> 
+obs_data_mn <- read_csv(here("data/Monarch.csv")) |>
+  dplyr::select(gbifID, decimalLatitude, decimalLongitude) |>
   drop_na()|>
-  rename(latitude=decimalLatitude) |> 
+  rename(latitude=decimalLatitude) |>
   rename(longitude=decimalLongitude)
+```
+
+```{r}
+# set the extent for the monarch data we want to focus on
+max_lat <- ceiling(max(obs_data_mn$latitude))
+min_lat <- floor(min(obs_data_mn$latitude))
+max_lon <- ceiling(max(obs_data_mn$longitude))
+min_lon <- floor(min(obs_data_mn$longitude))
+
+# Store boundaries in a single extent object
+geographic_extent <- ext(x = c(min_lon, max_lon, min_lat, max_lat))
+
+# This makes a pretty map for our milkweed data.
+world_map <- world(resolution = 3,
+                   path = "data/")
+# Crop the map to our area of interest
+my_map_mn <- crop(x = world_map, y = geographic_extent)
 ```
 
 ```{r}
@@ -355,15 +375,79 @@ points(bioclim_points_vect, col = ifelse(all_points_mn$pa == 1, "blue", "red"),
 
 ```
 
+## Thin bioclim datasets and combine with milkweed occurrences
+
+```{r}
+#extract geospatial bioclim data based on milkweed occurrences by lat and long, producing a matrix of bioclim data relevant to the milkweed occurrences
+bioclim_extract_mn <- terra::extract(x = bioclim_data,
+                           y = all_points_mn[, c("longitude", "latitude")],
+                           ID = FALSE) # No need for an ID column 
+#### for what ever reason, you need to specify that the extract function is coming from the terra package so the "terra::" portion is absolutely critical
+
+
+
+# Add the milkweed occurrence points and extracted climate datasets together
+points_climate_mn <- cbind(all_points_mn, bioclim_extract_mn) 
+
+# remove na values; na values will cause issues in the model calibration
+points_climate_mn <- points_climate_mn |> 
+  drop_na()
+
+#select the bioclim variables we are using in our model (i.e. bioclim 1 (mean annual temperature) and bioclim 12(mean annual precip)), along with the locations and presence-absence data from the larger dataset
+points_climate_mn <- points_climate_mn |> 
+  dplyr::select(longitude, latitude, pa, wc2.1_2.5m_bio_1, wc2.1_2.5m_bio_12)
+
+
+#Plot the selected bioclim data points to visualize extracted data
+
+# Convert the dataframe to a SpatVector (spatial points object)
+bioclim_points_vect_mn <- vect(points_climate_mn, 
+                            geom = c("longitude", "latitude"), 
+                            crs = "EPSG:4326")
+
+#Basemap of our extent
+plot(my_map_mn)
+
+# Overlay only the selected bioclim points
+points(bioclim_points_vect_mn, 
+       col = "blue", 
+       pch = 20)
+```
 
 ## Use the calibration_glm() Function to Identify Best Model
 
-*\*Hint* you may need to inspect the data going into the calibration_glm() function.
+**Hint** you may need to inspect the data going into the calibration_glm() function.
 
 **What is the best model?**
 
-```{r}
+After running the `calibration_glm()` function, the best model is **ModelID_7**. 
 
+```{r}
+get_formulas(dependent = "Sp", independent = c("wc2.1_2.5_bio_1", "wc2.1_2.5_bio_12"),  
+             type = "lq", mode = "moderate")
+```
+
+```{r}
+points_climate_mn <- as.data.frame(points_climate_mn, xy = TRUE)
+
+calibration_mn <- calibration_glm(data = points_climate_mn, dependent = "pa",
+                               independent = c("wc2.1_2.5m_bio_1", "wc2.1_2.5m_bio_12"),
+                               response_type = "lpq",
+                               formula_mode = "moderate", 
+                               exclude_bimodal = TRUE, 
+                               selection_criterion = "TSS",
+                               cv_kfolds = 5, 
+                               verbose = FALSE)
+calibration_mn
+#> enmpa-class `enmpa_calibration`:
+#> $selected             : Selected models (N = 2)
+#> $summary              : A summary of statistics for all models. 
+#> $calibration_results  : Results obtained from cross-validation for all models. 
+#> $data                 : Data used for calibration. 
+#> $partitioned_data     : k-fold indexes (k = 5)
+#> $weights              : Use of weights (FALSE)
+ 
+summary(calibration_mn)
 ```
 
 ## Fit and Create Projections for the Selected Model
@@ -371,7 +455,26 @@ points(bioclim_points_vect, col = ifelse(all_points_mn$pa == 1, "blue", "red"),
 **What is the model saying for monarchs?**
 
 ```{r}
+fits_mn <- fit_selected(calibration_mn) 
 
+ #Prediction for the two selected models and their consensus
+preds_E_mn  <- predict_selected(fits_mn, 
+                                newdata = bioclim_data, 
+                                extrapolation_type = "E", 
+                                consensus = TRUE)
+preds_NE_mn <- predict_selected(fits_mn, 
+                                newdata = bioclim_data, 
+                                extrapolation_type = "EC", 
+                                consensus = TRUE)
+
+#They will not be different because the both are confined to the same range as the training data
+
+# Visualization of the Models
+
+plot(c(preds_E_mn$predictions, preds_NE_mn$predictions),
+     main = c("Probability of Monarch Occurrences (E)",
+              "Probability of Monarch Occurrences (EC)"),
+     mar = c(1, 1, 2, 5))
 ```
 
 ## Create a Response Curve for the Two Environmental Parameters
@@ -379,7 +482,12 @@ points(bioclim_points_vect, col = ifelse(all_points_mn$pa == 1, "blue", "red"),
 **What are the response curves saying about the two environmental parameters?**
 
 ```{r}
-
+response_curve(fitted = fits_mn, 
+               modelID = "ModelID_7", 
+               variable = "wc2.1_2.5m_bio_1")
+response_curve(fitted = fits_mn, 
+               modelID = "ModelID_7", 
+               variable = "wc2.1_2.5m_bio_12")
 ```
 
 ## Compare the Model Progections and Response Curves of the Milkweed and Monarch Data Sets

@@ -1,0 +1,100 @@
+---
+title: "`survival` package portfolio assignment"
+author: "Maxwell Pepperdine"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+## Overview / context 
+
+Context: You have been hired to determine the risk of quagga mussel establishment into water bodies of the western US (e.g. Lake Tahoe). Use the questions below to analyze survival rates and the survival curve of mussels under different calcium concentrations. Calcium is critical for mussel growth and physiology.
+
+## Load packages 
+
+```{r}
+library(survival)
+library(survminer)
+library(dplyr)
+library(here)
+library(tidyverse)
+```
+
+
+## Questions
+
+#### 1. Using the provided data, create a survival object and fit the survival curves separately by treatment. Show/Provide the life tables for both treatments (a life table presents information on the number at risk (number still remaining) and the cumulative survival at that instant).
+
+###### Load data 
+
+```{r}
+mussel_df <- read_csv(here("data/Davis_quagga_mussels.csv"))
+```
+
+###### Create a survival object and fit the survival curves separately by treatment
+
+```{r}
+# "~treatment" means we fitting the survival curves by treatment
+sfit <- survfit(Surv(day, status)~treatment, data=mussel_df)
+```
+
+###### Show the life tables for both treatments
+
+```{r}
+# print the life tables for both treatments
+summary(sfit)
+```
+
+#### 2. Now that a survival curve fits the data visualize it with a Kaplan-Meier plot using the survminer package and the ggsurvplot() function. Show your plot. Compare the survival outcomes of the 2 treatments. Which treatment appears more effective? Why? And what do the “+” symbols on the curves represent?
+
+```{r}
+# make a Kaplan-Meier plot with the base ggsurvplot function
+ggsurvplot(sfit)
+```
+
+If the goal is to limit the spread of quagga mussels in water bodies, the treatment with 9 ppm of calcium appears to be more effective. The survival curve for the 9 ppm treatment is lower than the 12 ppm treatment, indicating that mussels under the 9 ppm treatment have a lower survival probability. The "+" symbols on the curves represent censored data points, where the survival status is unknown or the event has not occurred yet. 
+
+#### 3. Now add confidence intervals to your plot, show the p-value for the log-rank test visually, show a risk table below the plot, and change the colors and the group labels. Interpret the p-value from the log-rank test. What does this p-value indicate about the difference in survival probabilities between the two calcium treatments?
+
+```{r}
+# make a prettier plot!
+ggsurvplot(sfit, # the survival object
+           conf.int=TRUE, # add confidence intervals around the survival curves
+           pval=TRUE, # show the p-value for the log-rank test
+           risk.table=TRUE, # show a risk table below the plot
+           legend.labs=c("9_ppm_Ca", "12_ppm_Ca"), 
+           legend.title="Treatment",  
+           palette=c("forestgreen", "brown"), 
+           title="Kaplan-Meier Curve for quagga mussel survival under different calcium concentrations", 
+           risk.table.height=.2) # specify the height of the risk table
+```
+
+The p-value from the log-rank test visually indicates the difference in survival probabilities between the two calcium treatments. A low p-value suggests that the survival curves are significantly different, indicating that the calcium treatment has a significant effect on mussel survival. In this case, the p-value is 0.005, indicating a statistically significant difference in survival probabilities for quagga mussels between the 9 ppm and 12 ppm calcium treatments.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

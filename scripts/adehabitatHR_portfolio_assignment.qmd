@@ -231,10 +231,13 @@ gnat2024 <- gnat |>
 ### Create Spatial Points Data Frame
 
 ```{r}
+#Create a variable "prj" for the WGS 1984 CRS projection 
+prj <- "+init=epsg:4326"
+
 #Create a SpatialPointsDataFrame (SPDF) for the 2024 gnatcatcher data
 spdf2024 <- SpatialPointsDataFrame(
              # Combine longitude and latitude into coordinate pairs
-             coords = coordinates(cbind(gnat2024$decimalLongitude,,
+             coords = coordinates(cbind(gnat2024$decimalLongitude,
                                         gnat2024$decimalLatitude)),
              # Use the original dataset to include additional attributes
              data = gnat2024, 
@@ -248,16 +251,20 @@ st_crs(spdf2024)
 ### Visualize Data
 
 ```{r}
-#quick plot
-plot('insert code')
+#make a quick plot
+plot(spdf2024, 
+     pch = 19, # symbol type
+     cex = .5) # symbol size
 ```
 
 ### Kernel Density Estimation
 
 ```{r}
-kd2024 <- kernelUD('insert code')
+# run the kernel density
+kd2024 <- kernelUD(xy = spdf2024, # input SPDF
+                   h = "href") # use the 'href' method to estimate smoothing
 
-#Visualize the kernel density estimation
+#Visualize the kernel density estimation as a raster-like image
 image(kd2024)
 ```
 
@@ -265,18 +272,21 @@ image(kd2024)
 
 ```{r}
 # Extract 75% and 90% home range polygons
-hr75_2024 <- getverticeshr('insert code')
+hr75_2024 <- getverticeshr(x = kd2024, 
+                           percent = 75) # 75% home range
 
-hr90_2024 <- getverticeshr('insert code')
+hr90_2024 <- getverticeshr(x = kd2024, 
+                           percent = 90) # 90% home range
 
 # Check the class of the extracted object
+# it should be a SpatialPolygonsDataFrame
 class(hr90_2024) 
 ```
 
 ```{r}
 #quick plot of 90% and 75% Kernel Density home ranges
-plot('insert 90% home range', col = "green", main = "")
-plot('insert 75%  home range', add = TRUE, border = "orange")
+plot(hr90_2024, col = "green", main = "2024 Kernel Density Home Ranges")
+plot(hr75_2024, add = TRUE, border = "black")
 ```
 
 ### Better Visualization Methods
@@ -285,36 +295,64 @@ plot('insert 75%  home range', add = TRUE, border = "orange")
 
 ```{r}
 # Convert to sf format for ggplot and leaflet
-hr75_2024_sf <- st_as_sf('insert 75%  home range')
-hr90_2024_sf <- st_as_sf('insert 90% home range')
+hr75_2024_sf <- st_as_sf(hr75_2024)
+hr90_2024_sf <- st_as_sf(hr90_2024)
 ```
 
 ```{r}
+# plot with ggplot
 ggplot() +
+  # add the 90% Kernel density home range 
+  geom_sf(data = hr90_2024_sf, 
+          aes(fill = "90% Home Range"),  # assign label for legend
+          alpha = 0.4) +                 # adjust transparency
+  # add the 75% Kernel density home range
+  geom_sf(data = hr75_2024_sf, 
+          aes(fill = "75% Home Range"),  
+          alpha = 0.4) +
+  # add a legend 
+  scale_fill_manual(name = "2024 Home Range", 
+                    values = c("90% Home Range" = "purple", 
+                               "75% Home Range" = "red")) +
+  theme_minimal()
 ```
 
 #### leaflet
 
 ```{r}
+# leaflet map
 leaflet() |>
+  # add a base map
   addTiles() |>
-  addPolygons('insert 90% specifications') |>
-  addPolygons('insert 75% specifications') |> 
-  addLegend()
+  # add the 90% Kernel Density home range
+  addPolygons(data = hr90_2024_sf, 
+              color = "purple", 
+              fillOpacity = 0.3) |>
+  # add the 75% Kernel Density home range
+  addPolygons(data = hr75_2024_sf, 
+              color = "red", 
+              fillOpacity = 0.3) |> 
+  # add a legend
+  addLegend(position = "bottomleft",
+            colors = c("purple", "red"), 
+            labels = c("90% kd", "75% kd"),
+            title = "2024 Home Range",
+            opacity = 1)
 ```
 
 ### Calculate HR Area
 
 ```{r}
-# Ensure sf is suitable CRS to preserve distances and area
-hr90_2024_sf <- st_transform(hr90_2024_sf, crs = 'specify CRS')  
-hr75_2024_sf <- st_transform('insert 75% sf', crs = 'specify CRS')  
+# ensure sf is suitable CRS to preserve distances and area
+hr90_2024_sf <- st_transform(hr90_2024_sf, crs = 32611)  
+hr75_2024_sf <- st_transform(hr75_2024_sf, crs = 32611)  
 
 # Calculate area in sq. kilometers (remember that UTM is sq. meters)
-area_hr90_2024 <- as.numeric(st_area('insert 90% sf')) / 
+# divide by 1,000,000 to convert to km^2
+area_hr90_2024 <- as.numeric(st_area(hr90_2024_sf)) / 1000000
 area_hr90_2024  # 90% Total home range area
 
-area_hr75_2024 <- as.numeric(st_area('insert 75% sf')) / 
+area_hr75_2024 <- as.numeric(st_area(hr75_2024_sf)) / 1000000
 area_hr75_2024  # 75% Total home range area
 ```
 
@@ -324,26 +362,57 @@ Now that we have the kernel density home ranges for 1990-1992 and for 2024 let's
 
 ```{r}
 # Reproject back to WGS84 to preserve mapping for Leaflet
-hr90_9092_sf <- st_transform('insert 90% sf', crs = 'specify CRS')
-hr90_2024_sf <- st_transform('insert 90% sf', crs = 'specify CRS')
+hr90_9092_sf <- st_transform(hr90_9092_sf, crs = 4326)
+hr90_2024_sf <- st_transform(hr90_2024_sf, crs = 4326)
+
+# make sure this worked; confirm the CRS is WGS 1984
+st_crs(hr90_9092_sf)
 ```
 
 ```{r}
 # Now create the Leaflet map
-
+leaflet() |>
+  addTiles() |>
+  addPolygons(data = hr90_9092_sf, # 1990-1992 90% home range for CAGN
+              color = "purple", 
+              fillOpacity = 0.3) |> 
+  addPolygons(data = hr90_2024_sf, # 2024 90% home range for CAGN
+              color = "green", 
+              fillOpacity = 0.3) |>
+  addLegend(position = "bottomleft",
+            colors = c("purple", "green"), 
+            labels = c("1990-1992", "2024"),
+            title = "90% Home Range",
+            opacity = 1)
 ```
 
 ```{r}
-#Compare 1990-1992 and 2024 home range sizes (hint: no new calculations are required)
+# compare 1990-1992 and 2024 home range sizes (hint: no new calculations are required)
+# visually, we can just look at the leaflet plot
 
-#Calculate how much the home range has changed
-
+# calculate how much the home range has changed
+# subtract the 2024 area from the 1990-1992 area
+area_diff <- area_hr90_9092 - area_hr90_2024
 ```
+
+Visually, we can see that the 2024 home range for the California gnatcatcher (CAGN) is smaller than the 1990-1992 home range. It's 90% home range doesn't extend as far into Baja California and Baja California Sur as it did in the early 1990s.
+
+We also quantified the difference in home range area between 1990-1992 and 2024, finding that it decreased by approximately 181,591.28 km\^2.
 
 ## Questions
 
-1.  Why do you need to use a Spatial Points Data Frame for this analysis?
+**1.  Why do you need to use a Spatial Points Data Frame for this analysis?**
 
-2.  What is the difference between a 75% and 90% kernel density estimation?
+We need a Spatial Points Data Frame (SPDF) to represent the geographical locations of the California gnatcatcher observations. As mentioned in the lecture, `adehabitatHR` function require spatial data as inputs, and a SPDF stores spatial coordinates and attributes of real-world locations. This allows us to perform spatial analyses in the `adehabitatHR` package, such as kernel density estimation and home range modeling like we did in this assignment, on the species' occurrence data.
 
-3.  How has the California gnatcatcher home range size changed over time?
+**2.  What is the difference between a 75% and 90% kernel density estimation?**
+
+The difference between a 75% and 90% kernel density estimation lies in the area they represent. The 75% kernel density estimation represents a smaller area with a higher density of observations, while the 90% kernel density estimation represents a larger area with a lower density of observations (wider distribution). In other words, the 75% kernel density estimation is more conservative and represents a tighter home range estimate, while the 90% kernel density estimation is more expansive and includes a broader range of potential habitat.
+
+**3.  How has the California gnatcatcher home range size changed over time?**
+
+The California gnatcatcher home range size has decreased over time. Comparing the 1990-1992 home range to the 2024 home range, we observed visually and quantitatively that the 2024 home range is smaller. The 90% home range area decreased by approximately 181,591.28 km\^2 from 1990-1992 to 2024, indicating a reduction in the species' spatial distribution.
+
+
+
+
