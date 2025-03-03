@@ -301,6 +301,8 @@ Run the demo but with the monarch data set.
 
 **Plot the monarch data. What are the differences and similarities between the monarch map and the milkweed map that we made in the demo?**
 
+The observational data for monarchs and milkweed appear to cover a fairly similar extent; however, the actual map for the monarch data is constrained to a smaller geographic area. 
+
 ```{r}
 # load and clean the monarch data 
 obs_data_mn <- read_csv(here("data/Monarch.csv")) |>
@@ -320,11 +322,23 @@ min_lon <- floor(min(obs_data_mn$longitude))
 # Store boundaries in a single extent object
 geographic_extent <- ext(x = c(min_lon, max_lon, min_lat, max_lat))
 
-# This makes a pretty map for our milkweed data.
+# This makes a pretty map for our monarch data.
 world_map <- world(resolution = 3,
                    path = "data/")
 # Crop the map to our area of interest
 my_map_mn <- crop(x = world_map, y = geographic_extent)
+
+# Plot the base map
+plot(my_map_mn,
+     axes = TRUE,
+     col = "grey95")
+
+# Add the points for individual observations
+points(x = obs_data_mn$longitude,
+       y = obs_data_mn$latitude,
+       col = "darkgreen",
+       pch = 20,
+       cex = 0.75)
 ```
 
 ```{r}
@@ -420,7 +434,7 @@ points(bioclim_points_vect_mn,
 
 **What is the best model?**
 
-After running the `calibration_glm()` function, the best model is **ModelID_7**. 
+After running the `calibration_glm()` function, the best model is **ModelID_6**. 
 
 ```{r}
 get_formulas(dependent = "Sp", independent = c("wc2.1_2.5_bio_1", "wc2.1_2.5_bio_12"),  
@@ -454,6 +468,8 @@ summary(calibration_mn)
 
 **What is the model saying for monarchs?**
 
+The model projections show that the probability of monarch occurrences is highest in the Santa Ynez, Santa Barbara, and Ventura areas. 
+
 ```{r}
 fits_mn <- fit_selected(calibration_mn) 
 
@@ -481,12 +497,19 @@ plot(c(preds_E_mn$predictions, preds_NE_mn$predictions),
 
 **What are the response curves saying about the two environmental parameters?**
 
+BIO1 = annual mean temperature 
+BIO12 = annual precipitation
+
+The first response curve, for BIO1 (annual mean temperature), shows that the probability of monarch occurrences increases with temperature, peaking around 16-17 degrees Celsius. The probability of occurrence is essentially 0 below 14 degrees celsius, suggesting that monarchs cannot persist below this temperature or the area just doesn't get this cold. This is a fairly small temperature range, reflective of the central coast's mediterranean climate.
+
+The second response curve, for BIO12 (annual precipitation), shows that the probability of monarch occurrences increases with precipitation, peaking around 550 mm. 
+
 ```{r}
 response_curve(fitted = fits_mn, 
-               modelID = "ModelID_7", 
+               modelID = "ModelID_6", 
                variable = "wc2.1_2.5m_bio_1")
 response_curve(fitted = fits_mn, 
-               modelID = "ModelID_7", 
+               modelID = "ModelID_6", 
                variable = "wc2.1_2.5m_bio_12")
 ```
 
@@ -494,6 +517,14 @@ response_curve(fitted = fits_mn,
 
 **Where would you expect monarchs to be seen due to the presence of milkweed but there were no observations of monarchs? What is a probable explanation for that?**
 
+Looking at the model projections, we might expect monarchs to be seen in the Ventura and Moorpark areas where milkweed is present, but there are no observations of monarchs. This could be due to the fact that monarchs are migratory and may not be present in the area during the time of the observations.
+
 **Where would you expect milkweed to be seen due to the presence of monarchs but there were no observations of milkweed? What is a probable explanation for that?**
 
+Looking at the milkweed observations and monarch projections, it looks like milkweed is present in all locations we would expect. However, if we were to see milkweed missing in areas where monarchs are projected to be, it could be due to the fact that milkweed is not the only food source for monarchs. While monarchs breed in milkweed, they also feed on nectar from flowers, so it's possible they may be present in areas without milkweed.
+
 **Are there any other surprises in the models or the data?**
+
+I was surprised to see some monarch observations in the Channel Islands, this is super cool!
+
+

@@ -35,10 +35,10 @@ gr88 <- lambda(A88) # 1.0183
 
 The population growth rates for the years 1985 to 1988 are as follows:
 
-- **1985**: 0.9593
-- **1986**: 1.0098
-- **1987**: 0.8453
-- **1988**: 1.0183
+-   **1985**: 0.9593
+-   **1986**: 1.0098
+-   **1987**: 0.8453
+-   **1988**: 1.0183
 
 ## Determine the stochastic growth rate
 
@@ -56,12 +56,7 @@ The stochastic growth rate for the years 1985 to 1988 is approximately **0.9636*
 
 ## Question: Compare the growth rates calculated using the two methods. How are they different? Why?
 
-
-
-
-
-
-
+The deterministic growth rate is calculated based on the observed changes in population size over time, assuming that the population grows according to a specific model (e.g., exponential growth). In contrast, the stochastic growth rate takes into account the variability and uncertainty in population dynamics by simulating multiple iterations of population projections based on the observed transition matrices. The stochastic growth rate provides a more realistic estimate of population growth, as it considers the potential variability in population dynamics that may not be captured by a single deterministic growth rate calculation.
 
 
 

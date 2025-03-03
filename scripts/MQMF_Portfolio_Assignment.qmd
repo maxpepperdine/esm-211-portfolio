@@ -212,6 +212,21 @@ plot_population_vs_catch(age_range, california_halibut_data$population_at_age, c
 
 # Now It's you turn:
 
+## Portfolio assignment instructions
+
+- Choose a fish species we're interested in and gather the following information:
+    - Maximum age (as a series of numbers, such as 0:20)
+    - Natural mortality 
+    - Initial population size
+    
+- After filling in this information, use the bce() method to model catch for the selected population, analyze the data, and answer some conservation focused research questions.
+
+Selected species: **Chinook salmon** ([FishBase link](https://fishbase.org/summary/SpeciesSummary.php?ID=244&AT=chinook+salmon))
+
+- Maximum reported age: 9 yrs (0:9)
+- Using the natural mortality rate of 0.22 used in the halibut example
+- Couldn't find an initial population size, so I'm using 1000 as a hypothetical value
+
 ```{r}
 
 # ----------------------------------------

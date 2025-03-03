@@ -21,7 +21,6 @@ library(here)
 library(tidyverse)
 ```
 
-
 ## Questions
 
 #### 1. Using the provided data, create a survival object and fit the survival curves separately by treatment. Show/Provide the life tables for both treatments (a life table presents information on the number at risk (number still remaining) and the cumulative survival at that instant).
