@@ -2,6 +2,8 @@
 title: "MQMF Portfolio Assignment KEY"
 format: html
 editor: visual
+editor_options: 
+  chunk_output_type: console
 ---
 
 [MQMF Simple Population Models](https://haddonm.github.io/URMQMF/simple-population-models.html#the-baranov-catch-equation)
@@ -257,53 +259,47 @@ bce_data <- bce(M, Fat = fishing_mortality_n, Nt, ages=age_range)
 You should also grab each date field from the bce() function output to run further analysis
 
 ```{r}
-
+# examine the data output
 print(bce_data)
 
+# extract key population metrics from the dataset
 chinook_data <- extract_bce_data(bce_data)
-
 ```
 
 ## Quick Look: Fish Population at Age
 
 ```{r}
-
+# plot the fish population at age
 plot_fish_population(age_range, chinook_data$population_at_age)
-
-
 ```
 
 ## Plot the Catch at Age (n) Distribution
 
 ```{r}
-
+# plot the distribution of catch at age
 plot_catch_at_age(age_range, chinook_data$catch_at_age)
-
-
 ```
 
 ## Plot the Species Population and Catch at Age for Species
 
 ```{r}
-
+# plot both the fish population and catch at age
 plot_population_vs_catch(age_range, chinook_data$population_at_age, chinook_data$catch_at_age)
-
-
 ```
 
 ## **Conservation Recommendation Question:**
 
 (Recommendations dependent on species reproduction age, size at age, and catch rate)
 
-1.  What is the minimum catch size of your species and why?
+**1.  What is the minimum catch size of your species and why?**
 
 In 2025, the minimum catch size for Chinook salmon is set at 20 in [Federal Register](https://www.federalregister.gov/documents/2024/06/27/2024-14063/fisheries-off-west-coast-states-west-coast-salmon-fisheries-2024-specifications-and-management#:~:text=In%202025%2C%20the%20season%20opens%20April%205%20for%20all%20salmon,restrictions%20same%20as%20in%202022.). This is because Chinook salmon are known to be large fish, with the average size of a mature Chinook salmon being around 36 inches. Setting the minimum catch size at 20 inches attempts to ensure that most of the fish caught are mature or close to mature adults that have had the opportunity to reproduce at least once. This helps to protect the breeding population and ensures the long-term sustainability of the species.
 
-2.  What could be a potential slot limit to also protect large spawners? Why would this be implemented?
+**2.  What could be a potential slot limit to also protect large spawners? Why would this be implemented?**
 
 A potential slot limit for Chinook salmon could be a range of 24-30 inches. This slot limit would protect large spawners by allowing fish that are close to or have already reached maturity to continue breeding. Fish that fall within this slot limit are likely to be mature adults that have had the opportunity to reproduce multiple times, contributing to the overall health and genetic diversity of the population. By implementing a slot limit, fisheries can ensure that large spawners are protected and have the opportunity to pass on their genes to future generations, helping to maintain the genetic diversity and resilience of the population.
 
-3.  Why would there be catch limits for your species? What is a real-world example of a catch limit for your species
+**3.  Why would there be catch limits for your species? What is a real-world example of a catch limit for your species**
 
 Catch limits are implemented for Chinook salmon to prevent overfishing and ensure the long-term sustainability of the population. By setting catch limits, fisheries can control the amount of fish that are harvested each year, allowing the population to replenish and ensuring that enough fish are available for future generations. A real-world example of a catch limit for Chinook salmon is the annual catch limit set by the [Pacific Fishery Management Council](https://www.pcouncil.org/salmon/), which regulates the commercial and recreational fisheries for Chinook salmon along the West Coast of the United States. 
 

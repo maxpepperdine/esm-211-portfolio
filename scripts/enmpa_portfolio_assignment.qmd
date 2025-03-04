@@ -200,7 +200,6 @@ This is how you set up which models to test. When we say models, we mean predict
 ```{r}
 
 #The dependent variable will be the species (milkweed) and the independent variable will be the bioclim variable. The type of model will be linear quadratic (lq) which means it will examine linear and quadratic relationships between the variables, but not any more complex than that. Similarly, mode = moderate determines how tightly to fit the model to the dataset. This avoids overfitting the model.
-
 get_formulas(dependent = "Sp", independent = c("wc2.1_2.5_bio_1", "wc2.1_2.5_bio_12"),  
              type = "lq", mode = "moderate")
 ```
@@ -301,7 +300,7 @@ Run the demo but with the monarch data set.
 
 **Plot the monarch data. What are the differences and similarities between the monarch map and the milkweed map that we made in the demo?**
 
-The observational data for monarchs and milkweed appear to cover a fairly similar extent; however, the actual map for the monarch data is constrained to a smaller geographic area. 
+The observational data for monarchs and milkweed appear to cover a fairly similar extent; however, the actual map for the monarch data is constrained to a smaller geographic area.
 
 ```{r}
 # load and clean the monarch data 
@@ -392,7 +391,7 @@ points(bioclim_points_vect, col = ifelse(all_points_mn$pa == 1, "blue", "red"),
 ## Thin bioclim datasets and combine with milkweed occurrences
 
 ```{r}
-#extract geospatial bioclim data based on milkweed occurrences by lat and long, producing a matrix of bioclim data relevant to the milkweed occurrences
+#extract geospatial bioclim data based on monarch occurrences by lat and long, producing a matrix of bioclim data relevant to the monarch occurrences
 bioclim_extract_mn <- terra::extract(x = bioclim_data,
                            y = all_points_mn[, c("longitude", "latitude")],
                            ID = FALSE) # No need for an ID column 
@@ -400,7 +399,7 @@ bioclim_extract_mn <- terra::extract(x = bioclim_data,
 
 
 
-# Add the milkweed occurrence points and extracted climate datasets together
+# Add the monarch occurrence points and extracted climate datasets together
 points_climate_mn <- cbind(all_points_mn, bioclim_extract_mn) 
 
 # remove na values; na values will cause issues in the model calibration
@@ -434,16 +433,19 @@ points(bioclim_points_vect_mn,
 
 **What is the best model?**
 
-After running the `calibration_glm()` function, the best model is **ModelID_6**. 
+After running the `calibration_glm()` function, the best model is **ModelID_6**.
 
 ```{r}
+# examine the model formulas
 get_formulas(dependent = "Sp", independent = c("wc2.1_2.5_bio_1", "wc2.1_2.5_bio_12"),  
              type = "lq", mode = "moderate")
 ```
 
 ```{r}
+# turn the data into a dataframe
 points_climate_mn <- as.data.frame(points_climate_mn, xy = TRUE)
 
+# calibrate the model
 calibration_mn <- calibration_glm(data = points_climate_mn, dependent = "pa",
                                independent = c("wc2.1_2.5m_bio_1", "wc2.1_2.5m_bio_12"),
                                response_type = "lpq",
@@ -468,9 +470,10 @@ summary(calibration_mn)
 
 **What is the model saying for monarchs?**
 
-The model projections show that the probability of monarch occurrences is highest in the Santa Ynez, Santa Barbara, and Ventura areas. 
+The model projections show that the probability of monarch occurrences is highest in the Santa Ynez, Santa Barbara, and Ventura areas.
 
 ```{r}
+# fit the model
 fits_mn <- fit_selected(calibration_mn) 
 
  #Prediction for the two selected models and their consensus
@@ -497,14 +500,14 @@ plot(c(preds_E_mn$predictions, preds_NE_mn$predictions),
 
 **What are the response curves saying about the two environmental parameters?**
 
-BIO1 = annual mean temperature 
-BIO12 = annual precipitation
+BIO1 = annual mean temperature BIO12 = annual precipitation
 
 The first response curve, for BIO1 (annual mean temperature), shows that the probability of monarch occurrences increases with temperature, peaking around 16-17 degrees Celsius. The probability of occurrence is essentially 0 below 14 degrees celsius, suggesting that monarchs cannot persist below this temperature or the area just doesn't get this cold. This is a fairly small temperature range, reflective of the central coast's mediterranean climate.
 
-The second response curve, for BIO12 (annual precipitation), shows that the probability of monarch occurrences increases with precipitation, peaking around 550 mm. 
+The second response curve, for BIO12 (annual precipitation), shows that the probability of monarch occurrences increases with precipitation, peaking around 550 mm.
 
 ```{r}
+# generate response curves for annual mean temperature and annual precipitation
 response_curve(fitted = fits_mn, 
                modelID = "ModelID_6", 
                variable = "wc2.1_2.5m_bio_1")
@@ -526,5 +529,3 @@ Looking at the milkweed observations and monarch projections, it looks like milk
 **Are there any other surprises in the models or the data?**
 
 I was surprised to see some monarch observations in the Channel Islands, this is super cool!
-
-

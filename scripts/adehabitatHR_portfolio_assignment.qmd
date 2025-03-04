@@ -397,7 +397,7 @@ area_diff <- area_hr90_9092 - area_hr90_2024
 
 Visually, we can see that the 2024 home range for the California gnatcatcher (CAGN) is smaller than the 1990-1992 home range. It's 90% home range doesn't extend as far into Baja California and Baja California Sur as it did in the early 1990s.
 
-We also quantified the difference in home range area between 1990-1992 and 2024, finding that it decreased by approximately 181,591.28 km\^2.
+We also quantified the difference in home range area between 1990-1992 and 2024, finding that it decreased by approximately **181,591.28 km^2.**
 
 ## Questions
 
@@ -411,7 +411,7 @@ The difference between a 75% and 90% kernel density estimation lies in the area 
 
 **3.  How has the California gnatcatcher home range size changed over time?**
 
-The California gnatcatcher home range size has decreased over time. Comparing the 1990-1992 home range to the 2024 home range, we observed visually and quantitatively that the 2024 home range is smaller. The 90% home range area decreased by approximately 181,591.28 km\^2 from 1990-1992 to 2024, indicating a reduction in the species' spatial distribution.
+The California gnatcatcher home range size has decreased over time. Comparing the 1990-1992 home range to the 2024 home range, we observed visually and quantitatively that the 2024 home range is smaller. The 90% home range area decreased by approximately **181,591.28 km^2** from 1990-1992 to 2024, indicating a reduction in the species' spatial distribution.
 
 
 
